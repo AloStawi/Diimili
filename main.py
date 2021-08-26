@@ -1,14 +1,18 @@
 import discord
 import uuid
+import pytesseract
 from discord.ext import commands
-
-
 from PIL import Image
-
 import os
+import cv2
 #from online import online
 
+os.system("install-pkg tesseract-ocr")
+
 token = os.environ['TOKEN']
+
+pytesseract.pytesseract.tesseract_cmd = "tesseract"
+os.environ["TESSDATA_PREFIX"] = "/home/runner/.apt/usr/share/tesseract-ocr/4.00/tessdata/"
 
 intents = discord.Intents.default()
 intents.members = True
@@ -37,16 +41,17 @@ async def on_member_join(member):
 async def ola(ctx):
   embed = discord.Embed(
     title = "Olá, " + ctx.author.name + ".",
-    description = "Eu sou a Diimili.",
-    color = 10432809
+    description = "Eu sou a Diimili",
+    color = 16758465
   )
-  file = discord.File("imagens/Eri 2.gif", filename = "image.gif")
-  embed.set_image(url="attachment://image.gif")
+  embed.set_footer(text="Stawi#2917 © Nicolas Colas#9973")
+  file = discord.File("imagens/Eri 3.png", filename = "image.png")
+  embed.set_image(url="attachment://image.png")
   await ctx.send(file=file, embed=embed)
 
 #Comando 'Falar'
 @bot.command()
-async def falar(ctx, *, message):
+async def falar(ctx, *, message = '⠀'):
   await ctx.message.delete()
   await ctx.send(f"{message}".format(message))
 
@@ -80,7 +85,39 @@ async def poll(ctx, q, i : str, *opt):
   for j in new_l:
     await m.add_reaction(j)
 
+#método para deixar imagem cinza
+def get_grayscale(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+#método para melhorar imagem
+def thresholding(image):
+    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+#Comando para transcrever o texto de uma imagem
+@bot.command()
+async def tcv(ctx):
+  try:
+    url = ctx.message.attachments[0].url
+  except IndexError:
+    await ctx.send("Nenhuma imagem detectada!")
+  else:
+    if url[0:26] == "https://cdn.discordapp.com":
+      imageName = str(uuid.uuid4()) + '.jpg'
+      await ctx.message.attachments[0].save(imageName)
+
+      #Melhorando a imagem para conseguir transcrever
+      img = cv2.imread(imageName)
+      img = cv2.resize(img,(0,0),fx=3,fy=3)
+      img = get_grayscale(img)
+      img = thresholding(img)
+      text = pytesseract.image_to_string(img)
+
+      os.remove(imageName)
+      embed = discord.Embed(
+      title = "💻 🪄 🗒️ \n\nTexto transcrito: ",
+      description = '```' + text + '```',
+      color = 16758465)
+      await ctx.send(ctx.message.author.mention, embed = embed)
 
 #Método para mudar o contraste de imagens
 def change_contrast(img, level):
@@ -91,7 +128,7 @@ def change_contrast(img, level):
 
 #Comando mudar contraste da imagem
 @bot.command()
-async def doc(ctx, contrast = 100):
+async def scann(ctx, contrast = 100):
   try:
     url = ctx.message.attachments[0].url
   except IndexError:
@@ -109,7 +146,7 @@ async def doc(ctx, contrast = 100):
       os.remove(imageName)
       os.remove('output_file.jpg')
       await ctx.send(file=file)
-      await ctx.send(str(contrast))
+      
 #comando de teste
 @bot.command()
 async def ping(ctx):
