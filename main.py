@@ -1,18 +1,19 @@
 import discord
-import uuid
-import pytesseract
 from discord.ext import commands
-from PIL import Image
+import nacl
+import uuid
 import os
-import cv2
+from Image import Imagens
+from Music import Player
+
+
 #from online import online
 
 os.system("install-pkg tesseract-ocr")
 
 token = os.environ['TOKEN']
 
-pytesseract.pytesseract.tesseract_cmd = "tesseract"
-os.environ["TESSDATA_PREFIX"] = "/home/runner/.apt/usr/share/tesseract-ocr/4.00/tessdata/"
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -22,6 +23,8 @@ bot = commands.Bot(command_prefix = '=', case_insensitive = True, intents = inte
 #confirmação que o bot conseguiu logar
 @bot.event
 async def on_ready():
+  activity = discord.Game(name="a vida fora")
+  await bot.change_presence(status=discord.Status.online, activity=activity)
   print('We have logged in as {0.user}'.format(bot))
 
 #Quando um novo membro ingressar no servidor
@@ -42,10 +45,10 @@ async def ola(ctx):
   embed = discord.Embed(
     title = "Olá, " + ctx.author.name + ".",
     description = "Eu sou a Diimili",
-    color = 16758465
+    color = 10592204
   )
   embed.set_footer(text="Stawi#2917 © Nicolas Colas#9973")
-  file = discord.File("imagens/Eri 3.png", filename = "image.png")
+  file = discord.File("imagens/Diimili_Banner.png", filename = "image.png")
   embed.set_image(url="attachment://image.png")
   await ctx.send(file=file, embed=embed)
 
@@ -85,72 +88,18 @@ async def poll(ctx, q, i : str, *opt):
   for j in new_l:
     await m.add_reaction(j)
 
-#método para deixar imagem cinza
-def get_grayscale(image):
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-#método para melhorar imagem
-def thresholding(image):
-    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-#Comando para transcrever o texto de uma imagem
-@bot.command()
-async def tcv(ctx):
-  try:
-    url = ctx.message.attachments[0].url
-  except IndexError:
-    await ctx.send("Nenhuma imagem detectada!")
-  else:
-    if url[0:26] == "https://cdn.discordapp.com":
-      imageName = str(uuid.uuid4()) + '.jpg'
-      await ctx.message.attachments[0].save(imageName)
-
-      #Melhorando a imagem para conseguir transcrever
-      img = cv2.imread(imageName)
-      img = cv2.resize(img,(0,0),fx=3,fy=3)
-      img = get_grayscale(img)
-      img = thresholding(img)
-      text = pytesseract.image_to_string(img)
-
-      os.remove(imageName)
-      embed = discord.Embed(
-      title = "💻 🪄 🗒️ \n\nTexto transcrito: ",
-      description = '```' + text + '```',
-      color = 16758465)
-      await ctx.send(ctx.message.author.mention, embed = embed)
-
-#Método para mudar o contraste de imagens
-def change_contrast(img, level):
-  factor = (259 * (level + 255)) / (255 * (259 - level))
-  def contrast(c):
-      return 128 + factor * (c - 148)
-  return img.point(contrast)
-
-#Comando mudar contraste da imagem
-@bot.command()
-async def scann(ctx, contrast = 100):
-  try:
-    url = ctx.message.attachments[0].url
-  except IndexError:
-    await ctx.send("Nenhuma imagem detectada!")
-  else:
-    if url[0:26] == "https://cdn.discordapp.com":
-      imageName = str(uuid.uuid4()) + '.jpg'
-      await ctx.message.attachments[0].save(imageName)
-
-      img = Image.open(imageName).convert('L') #mudar cor pra preto e branco
-      img = change_contrast(img, contrast)
-        
-      img.save('output_file.jpg')
-      file = discord.File("output_file.jpg", filename = "image.jpg")
-      os.remove(imageName)
-      os.remove('output_file.jpg')
-      await ctx.send(file=file)
-      
+    
 #comando de teste
 @bot.command()
 async def ping(ctx):
   await ctx.send('Pong!')
+
+async def setup():
+  await bot.wait_until_ready()
+  bot.add_cog(Player(bot))
+  bot.add_cog(Imagens(bot))
+
+bot.loop.create_task(setup())
 
 #online()
 bot.run(token)
