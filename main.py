@@ -47,7 +47,7 @@ async def ola(ctx):
     description = "Eu sou a Diimili",
     color = 10592204
   )
-  embed.set_footer(text="Stawi#2917 © Nicolas Colas#9973")
+  embed.set_footer(text="Stawi#8389 © Nicolas Colas#1638")
   file = discord.File("imagens/Diimili_Banner.png", filename = "image.png")
   embed.set_image(url="attachment://image.png")
   await ctx.send(file=file, embed=embed)
